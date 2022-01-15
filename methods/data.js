@@ -5,16 +5,101 @@ const chalk = require("chalk"),
 
 
 class Data {
-    constructor(ohlcDays, buySellDays = [], timeSteps = 500) {
-        this.ohlcDays = ohlcDays;
+    constructor(ohlcDays = [], buySellDays = [], timeSteps = 500) {
+
         this.buySellDays = buySellDays;
+        this.ohlcDays = ohlcDays;
         this.timeSteps = timeSteps;
 
+    }
 
-        // this.formattedData = this.format();
-        // this.format();
+
+    optimizeBuySell(ohlcDay) {
+
+        var optimizedData1 = { profit: 0, buyArray: [], sellArray: 0 };
+        var optimizedData2 = { profit: 0, buyArray: [], sellArray: 0 };
+        var newProfit1 = 0;
+        var newProfit2 = 0;
+
+        // Getting rid of the first 15 minutes (untradeable)
+        let ohlcArray = _.takeRight(ohlcDay.ohlcArray, ohlcDay.ohlcArray.length - 15);
+
+        const loopLength = ohlcArray.length;
+
+        // Checking for 1 buy/sell
+        for (let i = 0; i < loopLength; i++) { // buy 
+            for (let j = i + 1; j < loopLength; j++) { // sell
+                // Making sure the buy point comes before the sell point
+                if (j < i) {
+                    continue;
+                }
+                newProfit1 = calcProfit(ohlcArray[i], ohlcArray[j]);
+                if (newProfit1 > optimizedData1.profit) {
+                    optimizedData1 = {
+                        profit: newProfit1,
+                        buyArray: [ohlcArray[i]],
+                        sellArray: [ohlcArray[j]]
+                    };
+
+                }
+            }
+        }
+
+        for (let i = 0; i < loopLength; i++) {
+            // console.log("Percentage complete:", (i / loopLength) * 100 + " %   -   time elapsed:", (Date.now() - start) / 1000);
+            for (let j = i + 1; j < loopLength; j++) {
+                for (let k = j + 1; k < loopLength; k++) {
+                    for (let l = k + 1; l < loopLength; l++) {
+                        if (l < k) {
+                            continue;
+                        }
+                        newProfit2 = calcProfit(ohlcArray[i], ohlcArray[j]) + calcProfit(ohlcArray[k], ohlcArray[l]);
+                        if (newProfit2 > optimizedData2.profit) {
+                            optimizedData2 = {
+                                profit: newProfit2,
+                                buyArray: [ohlcArray[i], ohlcArray[k]],
+                                sellArray: [ohlcArray[j], ohlcArray[l]]
+                            };
+
+                        }
+                    }
+                    if (k < j) {
+                        continue;
+                    }
+                }
+                if (j < i) {
+                    continue;
+                }
+            }
+        }
+
+        var optimized = optimizedData2;
+
+        if (optimizedData1.profit >= optimizedData2.profit) {
+            optimized = optimizedData1;
+        }
+
+
+
+        var returnArray = [];
+        for (let i = 0; i < optimized.buyArray.length; i++) {
+            returnArray.push({
+                date: optimized.buyArray[i].date,
+                buy: 1,
+                sell: 0
+            }, {
+                date: optimized.sellArray[i].date,
+                buy: 0,
+                sell: 1
+            });
+        }
+
+
+        return { profit: optimized.profit, optimizedArray: returnArray };
 
     }
+
+
 
     checkDateOrder(ohlcDays) {
         return ohlcDays.sort((a, b) => {
@@ -442,6 +527,20 @@ class Data {
 }
 
 // Functions
+function calcProfit(buyPoint, sellPoint, BC = 1, SC = 1) {
+    // Returns the % profit, with commissions factored in. 
+    var numOfShares = 25;
+
+    var SPP = buyPoint.close * numOfShares;
+    var SSP = sellPoint.close * numOfShares;
+    // BC = buying commission price
+    // SC = selling commission price
+
+
+    return ((SSP - SC) - (SPP + BC)) / (SPP + BC) * 100;
+
+}
+
 function calcWildersSmoothingMethod(
     array,
     timePeriod,

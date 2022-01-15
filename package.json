@@ -12,11 +12,17 @@
     "axios": "^0.24.0",
     "chalk": "^4.1.2",
     "dotenv": "^10.0.0",
+    "fs": "0.0.1-security",
     "lodash": "^4.17.21",
     "mathjs": "^10.0.2",
     "mongoose": "^6.1.0"
   },
   "devDependencies": {
     "jest": "^27.4.5"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "/assets/optimized.json"
+    ]
   }
 }

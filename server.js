@@ -2,6 +2,7 @@ const mongoose = require("mongoose"),
   axios = require("axios"),
   dotenv = require("dotenv"),
   _ = require("lodash"),
+  fs = require("fs"),
   chalk = require("chalk");
 
 const Data = require("./methods/data");
@@ -15,8 +16,6 @@ const ohlcDay = require("./models/ohlcDay"),
   predictionDay = require("./models/predictionDay");
 
 const apiKey = process.env.FINNHUB_API_KEY;
-
-
 
 const connectDB = async () => {
   try {
@@ -117,19 +116,83 @@ const patchYear = async (ticker) => {
 
 const timer = ms => new Promise(res => setTimeout(res, ms));
 
+const optimizeAndSave = async (ohlcDays) => {
+  try {
+    const todaysDate = new Date().toDateString();
+
+    for (let i = 0; i < ohlcDays.length; i++) {
+
+      let current = ohlcDays[i];
+
+      // Making sure the day isn't empty 
+      if (current.ohlcArray.length) {
+
+
+        // Since it takes a long time, there is a file called optimized.json that stores which 
+        // days have been optimized so far. Checking that the day hasn't been optimized yet
+        let optimized = JSON.parse(fs.readFileSync("./assets/optimized.json"));
+        var optimizedAlready = false;
+
+        for (let j = 0; j < optimized.optimizedDayArray.length; j++) {
+          if (optimized.optimizedDayArray[j] == current.day) {
+            optimizedAlready = true;
+          }
+        }
+
+        if (!optimizedAlready) {
+
+          console.log(chalk.grey("Optimizing data for " + chalk.yellowBright(current.day)) + "...");
+
+          let query = await buySellDay.findOne({ ticker: current.ticker, day: current.day });
+
+          if (!query) {
+            // create a new buySell day
+            query = await buySellDay.create({ ticker: current.ticker, day: current.day, profit: 0, buySellDaysArray: [] });
+            console.log(chalk.yellowBright("Creating new buySellDay for", current.day));
+          }
+
+          // Optimizing new array
+          let start = Date.now();
+          let data = new Data();
+          let { profit, optimizedArray } = data.optimizeBuySell(ohlcDays[i]);
+
+          query.buySellDaysArray = optimizedArray;
+          query.profit = profit;
+          query.save();
+
+          console.log(chalk.blue("Done optimizing buy/sell input for " + chalk.yellowBright(current.day) + ". Optimization took " + chalk.yellowBright(((Date.now() - start) / 60000).toFixed(4)) + " mins. Profit was calculated to optimize at " + chalk.yellowBright((profit).toFixed(2) + " %") + ", with " + chalk.greenBright(optimizedArray.length / 2) + " trades."));
+          let newOptimized = {
+            day: todaysDate,
+            optimizedDayArray: [...optimized.optimizedDayArray, current.day]
+          };
+
+          fs.writeFileSync("./assets/optimized.json", JSON.stringify(newOptimized));
+
+          console.log("\n");
+
+        } else {
+          console.log(chalk.grey("Data is already optimized for " + chalk.yellowBright(current.day)) + "...");
+        }
+      }
+    }
+
+
+  } catch (err) {
+    console.log(err);
+  }
+};
 
 const loop = async () => {
   try {
     await connectDB();
 
-    let ohlcDays = await ohlcDay.find({ ticker: "MSFT" })
+    let allOhlcDays = await ohlcDay.find({ ticker: "MSFT" })
       .sort({ _id: -1 });
 
-    let data = new Data(_.takeRight(ohlcDays, 10));
+    await optimizeAndSave(allOhlcDays);
 
-    data.format();
+    console.log(chalk.greenBright("Done optimizing buy/sell configurations for all days."));
 
-    // patchYear("MSFT");
   } catch (err) {
     console.log(err);
   }

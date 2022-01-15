@@ -3,6 +3,7 @@ var mongoose = require("mongoose");
 var buySellDays = new mongoose.Schema({
   ticker: String,
   day: String,
+  profit: Number,
   buySellDaysArray: [
     {
       date: Number,
