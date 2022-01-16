@@ -6,7 +6,13 @@ var buySellDays = new mongoose.Schema({
   profit: Number,
   buySellDaysArray: [
     {
+      open: Number,
+      high: Number,
+      low: Number,
+      close: Number,
+      volume: Number,
       date: Number,
+      dateString: String,
       buy: Number,
       sell: Number,
       _id: false,

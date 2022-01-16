@@ -38,7 +38,7 @@ class Data {
                     optimizedData1 = {
                         profit: newProfit1,
                         buyArray: [ohlcArray[i]],
-                        sellArray: [ohlcArray[j]]
+                        sellArray: [ohlcArray[j]],
                     };
 
                 }
@@ -58,7 +58,7 @@ class Data {
                             optimizedData2 = {
                                 profit: newProfit2,
                                 buyArray: [ohlcArray[i], ohlcArray[k]],
-                                sellArray: [ohlcArray[j], ohlcArray[l]]
+                                sellArray: [ohlcArray[j], ohlcArray[l]],
                             };
 
                         }
@@ -79,21 +79,32 @@ class Data {
             optimized = optimizedData1;
         }
 
-
-
         var returnArray = [];
         for (let i = 0; i < optimized.buyArray.length; i++) {
+
             returnArray.push({
+                open: optimized.buyArray[i].open,
+                high: optimized.buyArray[i].high,
+                low: optimized.buyArray[i].low,
+                close: optimized.buyArray[i].close,
+                volume: optimized.buyArray[i].volume,
                 date: optimized.buyArray[i].date,
+                dateString: new Date(optimized.buyArray[i].date).toLocaleString(),
                 buy: 1,
                 sell: 0
             }, {
+                open: optimized.sellArray[i].open,
+                high: optimized.sellArray[i].high,
+                low: optimized.sellArray[i].low,
+                close: optimized.sellArray[i].close,
+                volume: optimized.sellArray[i].volume,
                 date: optimized.sellArray[i].date,
+                dateString: new Date(optimized.sellArray[i].date).toLocaleString(),
                 buy: 0,
                 sell: 1
             });
-        }
 
+        }
 
         return { profit: optimized.profit, optimizedArray: returnArray };
 

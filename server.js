@@ -156,6 +156,7 @@ const optimizeAndSave = async (ohlcDays) => {
           let data = new Data();
           let { profit, optimizedArray } = data.optimizeBuySell(ohlcDays[i]);
 
+
           query.buySellDaysArray = optimizedArray;
           query.profit = profit;
           query.save();
