@@ -299,7 +299,6 @@ const initial = [{
 
 const data = new Data(initial);
 
-
 test("Checks if the data is in ascending order", () => {
     expect(data.checkDateOrder(initial)).toStrictEqual([
         {

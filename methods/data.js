@@ -13,7 +13,6 @@ class Data {
 
     }
 
-
     optimizeBuySell(ohlcDay) {
 
         var optimizedData1 = { profit: 0, buyArray: [], sellArray: 0 };
@@ -21,8 +20,8 @@ class Data {
         var newProfit1 = 0;
         var newProfit2 = 0;
 
-        // Getting rid of the first 15 minutes (untradeable)
-        let ohlcArray = _.takeRight(ohlcDay.ohlcArray, ohlcDay.ohlcArray.length - 15);
+        // Getting rid of the first 30 minutes (untradeable, too volatile)
+        let ohlcArray = _.takeRight(ohlcDay.ohlcArray, ohlcDay.ohlcArray.length - 30);
 
         const loopLength = ohlcArray.length;
 
@@ -317,10 +316,10 @@ class Data {
         }
     }
 
-    deleteFifteen(array) {
+    delete(array, amountOfDays) {
         return array.map((dayArray) => {
-            if (dayArray.length > 15) {
-                return _.takeRight(dayArray, dayArray.length - 15);
+            if (dayArray.length > amountOfDays) {
+                return _.takeRight(dayArray, dayArray.length - amountOfDays);
             } else {
                 return dayArray;
             }
@@ -509,10 +508,10 @@ class Data {
 
         console.log("Cumulative execution time for movingStandardize", chalk.greenBright((Date.now() - start) / 1000), "seconds to execute.");
 
-        // This function gets rid of the first 15 minutes of the day (as it's unpredictable, and RSI calculations are not 100%)
-        formattedData = this.deleteFifteen(formattedData);
+        // This function gets rid of the first 30 minutes of the day (as it's unpredictable, and RSI calculations are not 100%)
+        formattedData = this.delete(formattedData, 30);
 
-        console.log("Cumulative execution time for deleteFifteen", chalk.greenBright((Date.now() - start) / 1000), "seconds to execute.");
+        console.log("Cumulative execution time for delete", chalk.greenBright((Date.now() - start) / 1000), "seconds to execute.");
 
         // Converting all the values of the array between 0 and 1
         formattedData = this.minMaxNormalize(formattedData, 8);
